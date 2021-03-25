@@ -325,8 +325,7 @@ class Banco:
 
         Retorna uma lista com objetos post localizados
         """
-        #self.cursor.execute("select * from posts where 'titulo' like '%:titulo%' limit :limite", {"titulo": titulo, "limite": 5})
-        self.cursor.execute(f"""select * from posts where titulo like ':titulo'""", {"titulo": titulo})
+        self.cursor.execute("select * from posts where titulo like (?) limit (?)", [f"%{titulo}%", limite])
         resultado = self.cursor.fetchall()
         lista_posts = []
         for x in resultado:
