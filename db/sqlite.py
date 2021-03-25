@@ -29,7 +29,7 @@ class Banco:
     seu parâmetro de criação é o cursor referente ao banco usado
     """
     def __init__(self, cursor):
-        self.cursor = cursor
+        self.cursor = cursor      
 
     def tamanho_numero(self, numero):
         if numero == 0:
@@ -51,8 +51,29 @@ class Banco:
         query_verificar_existe = f"SELECT _id from posts where _id = '{_id}'"
         self.cursor.execute(query_verificar_existe)
         # o resultado do fetchone é None caso não seja encontrado nada no banco
-        resultado = cursor.fetchone()
-        if resultado == None:
+        resultado = self.cursor.fetchone()
+        if resultado is None:
+            return False
+        else:
+            return True
+
+    def existe_by_titulo(self, titulo):
+        """
+        Parâmetros:
+        titulo (string)
+
+        Consulta o banco e verifica se determinada entrada existe, localizando pelo titulo
+        retorna booleano
+        """
+        
+        #print(titulo)
+        #self.cursor.execute(f"SELECT _id from posts where titulo like '{titulo}'")
+        #self.cursor.execute('''select _id from posts where titulo like ":titulo"''', {"titulo": titulo})
+        self.cursor.execute('''select _id from posts where titulo like (?)''', [titulo])
+        # o resultado do fetchone é None caso não seja encontrado nada no banco
+        resultado = self.cursor.fetchone()
+        
+        if resultado is None:
             return False
         else:
             return True
@@ -90,29 +111,37 @@ class Banco:
         # também é mais fácil, no fim das contas
         query_inserir = f'''INSERT INTO posts (_id, titulo, data_publicacao, resumo, post_url) VALUES (?,?,?,?,?)'''
         valores = [post._id,post.titulo,post.data_publicacao,post.resumo,post.post_url]
-        try:
-            self.cursor.execute(query_inserir, valores)
-            # cursor pode commitar a query usando o método "connection"
-            # fonte: https://stackoverflow.com/questions/50429589/python-sqlite3-is-commit-used-on-the-connect-or-cursor/50429875
-            self.cursor.connection.commit()
-        # exceção ao erro de entrada duplicada no banco
-        except sqlite3.IntegrityError:
-            print("Documento já existe no banco")
-            return None
-        #except sqlite3.OperationalError:
-            # exceção da ausência das tabelas, oo que impede inserção dos dados
-            # necessário rodar o método "criar_tabelas" caso haja esse problema
-            #print("Por favor, crie as tabelas no banco antes de inserir dados")
-        # consulta o id recém inserido, retorna caso localize
-        consulta_id_query = f"SELECT _id from posts where _id = '{post._id}'"
-        self.cursor.execute(consulta_id_query)
-        # consulta apenas uma entrada, é o bastante aqui
-        resultado = self.cursor.fetchone()
-        # fecha o cursor após terminar de consultar o banco
-        #self.cursor.close()
-        # cursor retorna uma tupla, com o valor que interessa na primeira posição
-        return resultado[0]
         
+        if self.existe_by_id(f"{post._id}"):
+            print("Já existe um post com este id no banco, pulando")
+            return None
+        if self.existe_by_titulo(f"{post.titulo}"):
+            print("Já existe um post com este título no banco, pulando")
+            return None
+        else:
+            try:
+                self.cursor.execute(query_inserir, valores)
+                # cursor pode commitar a query usando o método "connection"
+                # fonte: https://stackoverflow.com/questions/50429589/python-sqlite3-is-commit-used-on-the-connect-or-cursor/50429875
+                self.cursor.connection.commit()
+            # exceção ao erro de entrada duplicada no banco
+            except sqlite3.IntegrityError:
+                print("Documento já existe no banco")
+                return None
+            #except sqlite3.OperationalError:
+                # exceção da ausência das tabelas, oo que impede inserção dos dados
+                # necessário rodar o método "criar_tabelas" caso haja esse problema
+                #print("Por favor, crie as tabelas no banco antes de inserir dados")
+            # consulta o id recém inserido, retorna caso localize
+            consulta_id_query = f"SELECT _id from posts where _id = '{post._id}'"
+            self.cursor.execute(consulta_id_query)
+            # consulta apenas uma entrada, é o bastante aqui
+            resultado = self.cursor.fetchone()
+            # fecha o cursor após terminar de consultar o banco
+            #self.cursor.close()
+            # cursor retorna uma tupla, com o valor que interessa na primeira posição
+            return resultado[0]
+
     def alterar(self, _id, alteracao):
         """
         Parãmetros:
@@ -296,8 +325,8 @@ class Banco:
 
         Retorna uma lista com objetos post localizados
         """
-        query_post_by_titulo = f"select * from posts where titulo like '%{titulo}%' limit {limite}"
-        self.cursor.execute(query_post_by_titulo)
+        #self.cursor.execute("select * from posts where 'titulo' like '%:titulo%' limit :limite", {"titulo": titulo, "limite": 5})
+        self.cursor.execute(f"""select * from posts where titulo like ':titulo'""", {"titulo": titulo})
         resultado = self.cursor.fetchall()
         lista_posts = []
         for x in resultado:
@@ -318,7 +347,7 @@ class Banco:
         self.cursor.execute(query_contar)
         resultado = self.cursor.fetchone()
         return resultado[0]
-        
+
     def consulta_tudo(self, limite=5):
         """
         Consulta a tabela inteira do banco
@@ -342,3 +371,17 @@ class Banco:
             lista_posts.append(post)
             del post
         return lista_posts
+"""
+cursor = conectar('posts.db.bak')
+banco = Banco(cursor)
+#banco.criar_tabela()
+#conteudo = {'_id': '8b87dd3d27c7f3d0ee2c3b6334', 'titulo': 'É #FAKE que taxa de mortalidade aumentou em Israel após aplicação da vacina da Pfizer contra a Covid-19', 'data_publicacao': '2021-03-08T20:47:18.102Z', 'resumo': 'Dados mostram que número de internações e mortes, na verdade, tem caído à medida em que país alcança maior cobertura vacinal.', 'post_url': 'https://g1.globo.com/fato-ou-fake/coronavirus/noticia/2021/03/08/e-fake-que-taxa-de-mortalidade-aumentou-em-israel-apos-aplicacao-da-vacina-da-pfizer-contra-a-covid-19.ghtml'}
+#post = Post(conteudo)
+res = banco.consulta_tudo()
+for x in res:
+    print(x.titulo)
+    if banco.existe_by_titulo(x.titulo):
+        print("post existe")
+    else:
+        print("post existente foi marcado como nao existe")
+        """
