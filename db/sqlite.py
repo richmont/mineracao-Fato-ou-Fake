@@ -370,17 +370,3 @@ class Banco:
             lista_posts.append(post)
             del post
         return lista_posts
-"""
-cursor = conectar('posts.db.bak')
-banco = Banco(cursor)
-#banco.criar_tabela()
-#conteudo = {'_id': '8b87dd3d27c7f3d0ee2c3b6334', 'titulo': 'É #FAKE que taxa de mortalidade aumentou em Israel após aplicação da vacina da Pfizer contra a Covid-19', 'data_publicacao': '2021-03-08T20:47:18.102Z', 'resumo': 'Dados mostram que número de internações e mortes, na verdade, tem caído à medida em que país alcança maior cobertura vacinal.', 'post_url': 'https://g1.globo.com/fato-ou-fake/coronavirus/noticia/2021/03/08/e-fake-que-taxa-de-mortalidade-aumentou-em-israel-apos-aplicacao-da-vacina-da-pfizer-contra-a-covid-19.ghtml'}
-#post = Post(conteudo)
-res = banco.consulta_tudo()
-for x in res:
-    print(x.titulo)
-    if banco.existe_by_titulo(x.titulo):
-        print("post existe")
-    else:
-        print("post existente foi marcado como nao existe")
-        """
