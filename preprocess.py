@@ -2,6 +2,8 @@
 import nltk
 from nltk.corpus import stopwords as sw
 from nltk.tokenize import word_tokenize
+from nltk.stem.snowball import SnowballStemmer
+import unicodedata
 
 
 class Token:
@@ -24,6 +26,8 @@ class Token:
         self.texto = texto  # texto a ser tratado
         self.lista_stopwords = []  # inicializa a variável vazia
         self.tokens_filtrados = []
+        self.tokens_stemmizados = []
+        self.tokens_lematizados = []
         self._id = id
         try:
             # passa pra lista as stopwords padrão da língua portuguesa
@@ -50,9 +54,36 @@ class Token:
                     print("Apenas strings são aceitas como stopwords,", x ,"ignorado")
 
         # executa a limpeza automaticamente após inicializar com o texto
-        self.limpeza()
+        self.limpeza_stopwords()
+        self.stemmizacao()
+        self.lematizacao()
 
-    def limpeza(self):
+    def remover_acentos(self, palavra):
+        # fonte: https://stackoverflow.com/questions/517923/what-is-the-best-way-to-remove-accents-normalize-in-a-python-unicode-string
+        """
+        Parâmetros:
+        palavra (string)
+
+        Remove os acentos da palavra
+        retorna uma palavra do tipo "byte" e não string
+        """
+        nfkd_form = unicodedata.normalize('NFKD', palavra)
+        return u"".join([c for c in nfkd_form if not unicodedata.combining(c)])
+
+    def verifica_capitalizacao(self, palavra):
+        """
+        Parâmetros:
+        palavra (string)
+
+        Verifica se a primeira letra da palavra é maiúscula
+        ajuda a distinguir nomes próprios para escapar da radicalização
+        """
+        if palavra[0].isupper():
+            return True
+        else:
+            return False
+
+    def limpeza_stopwords(self):
         """
         Método para remover do token bruto as stopwords
         (nativas do NLTK ou inseridas pelo usuário) e pontuação.
@@ -72,3 +103,37 @@ class Token:
         else:
             raise TypeError("Só consigo tratar strings")
 
+    def stemmizacao(self):
+        # stemmização: https://trainyourmachine.com/extrair-radicais/
+        stemmer = SnowballStemmer('portuguese')
+        palavras = self.tokens_filtrados
+        for palavra_acentuada in palavras:
+            palavra = self.remover_acentos(palavra_acentuada)
+            if self.verifica_capitalizacao(palavra):
+                # se palavra é nome próprio
+                # pula a stemmização e coloca direto na lista de resultado
+                self.tokens_stemmizados.append(palavra)
+            else:
+                # não é nome próprio
+                self.tokens_stemmizados.append(stemmer.stem(palavra))
+
+    def lematizacao(self):
+        # fonte: https://living-sun.com/pt/python/686087-simple-stemming-and-lemmatization-in-python-python-python-27-nlp.html
+        try:
+            lemmatizer = nltk.WordNetLemmatizer()
+        except LookupError:
+            nltk.download('wordnet')
+            lemmatizer = nltk.WordNetLemmatizer()
+        palavras = self.tokens_filtrados
+        for palavra_acentuada in palavras:
+            palavra = self.remover_acentos(palavra_acentuada)
+            if self.verifica_capitalizacao(palavra):
+                # se palavra é nome próprio
+                # pula a stemmização e coloca direto na lista de resultado
+                self.tokens_lematizados.append(palavra)
+            else:
+                # não é nome próprio
+                self.tokens_lematizados.append(lemmatizer.lemmatize(palavra))
+        
+            
+        #print [lemmatizer.lemmatize(t) for t in nltk.word_tokenize(temp_sent)]
