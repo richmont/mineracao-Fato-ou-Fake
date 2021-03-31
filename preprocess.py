@@ -1,9 +1,12 @@
 # referencia https://www.geeksforgeeks.org/removing-stop-words-nltk-python/
 import nltk
 from nltk.corpus import stopwords as sw
-from nltk.tokenize import word_tokenize
-from nltk.stem.snowball import SnowballStemmer
 import unicodedata
+#from spacy.lang.pt import Portuguese
+#from spacy import displacy
+import spacy
+
+#nlp_pt = Portuguese()
 
 
 class Token:
@@ -22,13 +25,14 @@ class Token:
         id (string)
         stopwords_customizadas (set) [opcional]
         """
-        
+        #self.nlp = Portuguese() # objeto do processador de linguagem natural
+        self.nlp = spacy.load("pt_core_news_sm")
         self.texto = texto  # texto a ser tratado
         self.lista_stopwords = []  # inicializa a variável vazia
-        self.tokens_filtrados = []
-        self.tokens_stemmizados = []
+        self.tokens_filtrados = [] # palavras filtradas sem stopwords e pontuação
+        self.nomes_proprios = []
         self.tokens_lematizados = []
-        self._id = id
+        self._id = id # identificador único da notícia
         try:
             # passa pra lista as stopwords padrão da língua portuguesa
             self.lista_stopwords = sw.words('portuguese')
@@ -55,8 +59,7 @@ class Token:
 
         # executa a limpeza automaticamente após inicializar com o texto
         self.limpeza_stopwords()
-        self.stemmizacao()
-        self.lematizacao()
+        #self.exibir_entidades()
 
     def remover_acentos(self, palavra):
         # fonte: https://stackoverflow.com/questions/517923/what-is-the-best-way-to-remove-accents-normalize-in-a-python-unicode-string
@@ -89,51 +92,20 @@ class Token:
         (nativas do NLTK ou inseridas pelo usuário) e pontuação.
         Cria no objeto a variável tokens_filtrados quando termina de trabalhar
         """
+        
         if isinstance(self.texto, str):  # verifica se a var recebida é string
             # tokeniza o texto bruto
-            self.token_bruto = word_tokenize(self.texto)
+            self.token_bruto = self.nlp(self.texto)
             self.tokens_filtrados = []
             for x in self.token_bruto:
                 # para cada elemento no token bruto
                 # verifica se é alfanumérico (ignorando pontuação)
                 # e se não consta na lista de stopwords
                 # excecão para palavras com hífen adicionada
-                if x.isalnum() and x not in self.lista_stopwords or "-" in x:
+                if x.text.isalnum() and x.text not in self.lista_stopwords or "-" in x.text:
                     self.tokens_filtrados.append(x)
+                    if x.pos_ == 'PROPN':
+                        self.nomes_proprios.append(x.text)
+                    self.tokens_lematizados.append(x.lemma_)
         else:
             raise TypeError("Só consigo tratar strings")
-
-    def stemmizacao(self):
-        # stemmização: https://trainyourmachine.com/extrair-radicais/
-        stemmer = SnowballStemmer('portuguese')
-        palavras = self.tokens_filtrados
-        for palavra_acentuada in palavras:
-            palavra = self.remover_acentos(palavra_acentuada)
-            if self.verifica_capitalizacao(palavra):
-                # se palavra é nome próprio
-                # pula a stemmização e coloca direto na lista de resultado
-                self.tokens_stemmizados.append(palavra)
-            else:
-                # não é nome próprio
-                self.tokens_stemmizados.append(stemmer.stem(palavra))
-
-    def lematizacao(self):
-        # fonte: https://living-sun.com/pt/python/686087-simple-stemming-and-lemmatization-in-python-python-python-27-nlp.html
-        try:
-            lemmatizer = nltk.WordNetLemmatizer()
-        except LookupError:
-            nltk.download('wordnet')
-            lemmatizer = nltk.WordNetLemmatizer()
-        palavras = self.tokens_filtrados
-        for palavra_acentuada in palavras:
-            palavra = self.remover_acentos(palavra_acentuada)
-            if self.verifica_capitalizacao(palavra):
-                # se palavra é nome próprio
-                # pula a stemmização e coloca direto na lista de resultado
-                self.tokens_lematizados.append(palavra)
-            else:
-                # não é nome próprio
-                self.tokens_lematizados.append(lemmatizer.lemmatize(palavra))
-        
-            
-        #print [lemmatizer.lemmatize(t) for t in nltk.word_tokenize(temp_sent)]
