@@ -40,7 +40,7 @@ class Banco:
         else:
             return None
 
-    def existe_by_id(self, _id):
+    def existe_by_id(self, _id, tabela='posts'):
         """
         Parâmetros:
         _id (string)
@@ -48,7 +48,7 @@ class Banco:
         Consulta o banco e verifica se determinada entrada existe, localizando pelo id
         retorna booleano
         """
-        query_verificar_existe = f"SELECT _id from posts where _id = '{_id}'"
+        query_verificar_existe = f"SELECT _id from {tabela} where _id = '{_id}'"
         self.cursor.execute(query_verificar_existe)
         # o resultado do fetchone é None caso não seja encontrado nada no banco
         resultado = self.cursor.fetchone()
@@ -57,6 +57,104 @@ class Banco:
         else:
             return True
 
+    def alterar(self, _id, alteracao, tabela='posts'):
+        """
+        Parãmetros:
+        cursor (SQLite cursor)
+        _id (string)
+        alteracao (lista)
+
+        Altera uma entrada já existente no banco
+        localiza o campo pelo _id, o registro chave
+        """
+        if self.existe_by_id(_id):
+            string_alteracoes = str()
+            # para cada chave da alteração
+            for x in alteracao.keys():
+                # concatena o trecho da alteração
+                # com a chave (x) e seu conteúdo (alteracao[x])
+                
+                string_alteracoes += f"'{x}' = '{alteracao[x]}'"
+            # monta a query incluindo o trecho dos campos alterados e o _id
+            # importante ter aspas simples em cada entrada
+            query_alterar = str(f"update {tabela} set {string_alteracoes} where _id = '{_id}'")
+            try:
+                self.cursor.execute(query_alterar)
+                self.cursor.connection.commit()
+            # tentar alterar uma coluna que não existe retorna esse erro
+            except sqlite3.OperationalError as e:
+                print("Alteração falhou: ", e)
+
+
+        else:
+            print("_id não localizado, alteração falhou")
+
+    def apagar(self, _id, tabela='posts'):
+        """
+        Parâmetros:
+        _id (string)
+
+        Apaga do banco de dados a entrada correspondente a _id informada
+        """
+        if self.existe_by_id(_id):
+            query_apagar = f"delete from {tabela} where '_id' = '{_id}'"
+            try:
+                self.cursor.execute(query_apagar)
+                self.cursor.connection.commit()
+            except sqlite3.OperationalError as e:
+                print("Apagar falhou: verifique as tabelas do banco ou execute criar_tabela ", e)
+        else:
+            print("Apagar falhou, id não existe")
+
+    """
+    CONSULTAS
+    """
+
+    def quantidade_total(self, tabela='posts'):
+        """
+        Conta quantas entradas há no banco de dados
+        Retorna um inteiro
+        """
+        query_contar = f"select count() from {tabela}"
+        self.cursor.execute(query_contar)
+        resultado = self.cursor.fetchone()
+        return resultado[0]
+
+    def consulta_tudo(self, limite=5, tabela='posts'):
+        """
+        Consulta a tabela inteira do banco
+
+        Parâmetros:
+        limite (int) Limita a quantidade máxmma de posts retornados
+
+        Retorna lista de objetos Post
+        """
+        if limite is None:
+            query_tudo = f"select * from {tabela}"
+        elif isinstance(limite, int):
+            query_tudo = f"select * from {tabela} limit {limite}"
+        else:
+            raise TypeError("Valor de limite inválido: ", limite)
+        self.cursor.execute(query_tudo)
+        resultado = self.cursor.fetchall()
+        lista_consulta = []
+        for x in resultado:
+            if tabela == 'posts':
+                # se consultamos a tabela "posts", retorna objeto Post
+                post = tupla_to_post(x)
+                lista_consulta.append(post)
+                del post
+            else:
+                # senão retorna dados simples do banco
+                # preparar objeto referente a outra tabela
+                lista_consulta.append(x)
+        return lista_consulta
+
+
+class TabelaPosts(Banco):
+    def __init__(self, cursor):
+        super().__init__(cursor)
+    
     def existe_by_titulo(self, titulo):
         """
         Parâmetros:
@@ -66,9 +164,6 @@ class Banco:
         retorna booleano
         """
         
-        #print(titulo)
-        #self.cursor.execute(f"SELECT _id from posts where titulo like '{titulo}'")
-        #self.cursor.execute('''select _id from posts where titulo like ":titulo"''', {"titulo": titulo})
         self.cursor.execute('''select _id from posts where titulo like (?)''', [titulo])
         # o resultado do fetchone é None caso não seja encontrado nada no banco
         resultado = self.cursor.fetchone()
@@ -110,7 +205,7 @@ class Banco:
         # única maneira de evitar que textos com aspas causem erro na query é inserir desta maneira
         # também é mais fácil, no fim das contas
         query_inserir = f'''INSERT INTO posts (_id, titulo, data_publicacao, resumo, post_url) VALUES (?,?,?,?,?)'''
-        valores = [post._id,post.titulo,post.data_publicacao,post.resumo,post.post_url]
+        valores = [post._id, post.titulo, post.data_publicacao, post.resumo, post.post_url]
         
         if self.existe_by_id(f"{post._id}"):
             print("Já existe um post com este id no banco, pulando")
@@ -141,60 +236,7 @@ class Banco:
             #self.cursor.close()
             # cursor retorna uma tupla, com o valor que interessa na primeira posição
             return resultado[0]
-
-    def alterar(self, _id, alteracao):
-        """
-        Parãmetros:
-        cursor (SQLite cursor)
-        _id (string)
-        alteracao (lista)
-
-        Altera uma entrada já existente no banco
-        localiza o campo pelo _id, o registro chave
-        """
-        if self.existe_by_id(_id):
-            string_alteracoes = str()
-            # para cada chave da alteração
-            for x in alteracao.keys():
-                # concatena o trecho da alteração
-                # com a chave (x) e seu conteúdo (alteracao[x])
-                
-                string_alteracoes += f"'{x}' = '{alteracao[x]}'"
-            # monta a query incluindo o trecho dos campos alterados e o _id
-            # importante ter aspas simples em cada entrada
-            query_alterar = str(f"update posts set {string_alteracoes} where _id = '{_id}'")
-            try:
-                self.cursor.execute(query_alterar)
-                self.cursor.connection.commit()
-            # tentar alterar uma coluna que não existe retorna esse erro
-            except sqlite3.OperationalError as e:
-                print("Alteração falhou: ", e)
-
-
-        else:
-            print("_id não localizado, alteração falhou")
-
-    def apagar(self, _id):
-        """
-        Parâmetros:
-        _id (string)
-
-        Apaga do banco de dados a entrada correspondente a _id informada
-        """
-        if self.existe_by_id(_id):
-            query_apagar = f"delete from posts where '_id' = '{_id}'"
-            try:
-                self.cursor.execute(query_apagar)
-                self.cursor.connection.commit()
-            except sqlite3.OperationalError as e:
-                print("Apagar falhou: verifique as tabelas do banco ou execute criar_tabela ", e)
-        else:
-            print("Apagar falhou, id não existe")
-
-    """
-    CONSULTAS
-    """
-
+ 
     def consulta_posts_data(self, ano=None, mes=None, dia=None, limite=10, pular=None, query_secundaria = None):
         """
         ano (int{4}) \n
@@ -335,38 +377,4 @@ class Banco:
             lista_posts.append(post)
             del post
         # retorna a lista de objetos post
-        return lista_posts
-
-    def quantidade_total(self):
-        """
-        Conta quantas entradas há no banco de dados
-        Retorna um inteiro
-        """
-        query_contar = "select count() from posts"
-        self.cursor.execute(query_contar)
-        resultado = self.cursor.fetchone()
-        return resultado[0]
-
-    def consulta_tudo(self, limite=5):
-        """
-        Consulta a tabela inteira do banco
-
-        Parâmetros:
-        limite (int) Limita a quantidade máxmma de posts retornados
-
-        Retorna lista de objetos Post
-        """
-        if limite is None:
-            query_tudo = "select * from posts"
-        elif isinstance(limite, int):
-            query_tudo = f"select * from posts limit {limite}"
-        else:
-            raise TypeError("Valor de limite inválido: ", limite)
-        self.cursor.execute(query_tudo)
-        resultado = self.cursor.fetchall()
-        lista_posts = []
-        for x in resultado:
-            post = tupla_to_post(x)
-            lista_posts.append(post)
-            del post
         return lista_posts
