@@ -33,17 +33,19 @@ class Token:
         self.nomes_proprios = []
         self.tokens_lematizados = []
         self._id = id # identificador único da notícia
+        
         try:
             # passa pra lista as stopwords padrão da língua portuguesa
             self.lista_stopwords = sw.words('portuguese')
         except LookupError:
-            """
+            """    
             Necessário executar estes dois comandos do NLTK para download
             dos pacotes necessários ao funcionamento das stopwords
             """
             nltk.download("punkt")
             nltk.download("stopwords")
             self.lista_stopwords = sw.words('portuguese')
+        
         if stopwords_customizadas is not None:
             """
             se o método recebeu a lista de stopwords customizadas,
@@ -102,10 +104,13 @@ class Token:
                 # verifica se é alfanumérico (ignorando pontuação)
                 # e se não consta na lista de stopwords
                 # excecão para palavras com hífen adicionada
-                if x.text.isalnum() and x.text not in self.lista_stopwords or "-" in x.text:
+                # resultados de dois engines de stopwords divergem
+                # como o melhor resultado são menos stopwords, usaremos ambos
+                if x.text.isalnum() and (x.text not in self.lista_stopwords) or ("-" in x.text) and (not x.is_stop):
                     self.tokens_filtrados.append(x)
                     if x.pos_ == 'PROPN':
                         self.nomes_proprios.append(x.text)
                     self.tokens_lematizados.append(x.lemma_)
+
         else:
             raise TypeError("Só consigo tratar strings")
