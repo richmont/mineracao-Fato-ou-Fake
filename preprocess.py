@@ -7,7 +7,9 @@ import unicodedata
 import spacy
 
 #nlp_pt = Portuguese()
+import time
 
+start_time = time.time()
 
 class Token:
     """
@@ -15,7 +17,8 @@ class Token:
     de texto em tokens limpos de stopwords e pontuação
     """
 
-    def __init__(self, id, stopwords_customizadas=None, texto=None):
+    def __init__(self, id, nlp, stopwords_customizadas=None, texto=None):
+        print("antes de inicializar o objeto ", time.time() - start_time, "seconds")
         """
         Inicializa o objeto Token com stopwords padrões do NLTK,
         mas dá a opção de receber uma lista de stopwords do usuário
@@ -26,14 +29,14 @@ class Token:
         stopwords_customizadas (set) [opcional]
         """
         #self.nlp = Portuguese() # objeto do processador de linguagem natural
-        self.nlp = spacy.load("pt_core_news_sm")
+        
         self.texto = texto  # texto a ser tratado
         self.lista_stopwords = []  # inicializa a variável vazia
         self.tokens_filtrados = [] # palavras filtradas sem stopwords e pontuação
         self.nomes_proprios = []
         self.tokens_lematizados = []
         self._id = id # identificador único da notícia
-        
+        self.nlp = nlp
         try:
             # passa pra lista as stopwords padrão da língua portuguesa
             self.lista_stopwords = sw.words('portuguese')
@@ -45,7 +48,7 @@ class Token:
             nltk.download("punkt")
             nltk.download("stopwords")
             self.lista_stopwords = sw.words('portuguese')
-        
+        print("Recebendo stopwords do NLTK", time.time() - start_time, "seconds")
         if stopwords_customizadas is not None:
             """
             se o método recebeu a lista de stopwords customizadas,
@@ -61,6 +64,7 @@ class Token:
 
         # executa a limpeza automaticamente após inicializar com o texto
         self.limpeza_stopwords()
+        print("após limpeza stopwords ",time.time() - start_time, "seconds")
         #self.exibir_entidades()
 
     def remover_acentos(self, palavra):
@@ -97,7 +101,9 @@ class Token:
         
         if isinstance(self.texto, str):  # verifica se a var recebida é string
             # tokeniza o texto bruto
+            print("antes de processar o token bruto ", time.time() - start_time, "seconds")
             self.token_bruto = self.nlp(self.texto)
+            print("processamento do token bruto pra objeto spacy ", time.time() - start_time, "seconds")
             self.tokens_filtrados = []
             for x in self.token_bruto:
                 # para cada elemento no token bruto
@@ -107,10 +113,13 @@ class Token:
                 # resultados de dois engines de stopwords divergem
                 # como o melhor resultado são menos stopwords, usaremos ambos
                 if x.text.isalnum() and (x.text not in self.lista_stopwords) or ("-" in x.text) and (not x.is_stop):
+                    #print("após o if ", time.time() - start_time, "seconds")
                     self.tokens_filtrados.append(x)
                     if x.pos_ == 'PROPN':
+                        #print("extrair nomes proprios ", time.time() - start_time, "seconds")
                         self.nomes_proprios.append(x.text)
                     self.tokens_lematizados.append(x.lemma_)
+                    #print("lematização ", time.time() - start_time, "seconds")
 
         else:
             raise TypeError("Só consigo tratar strings")
