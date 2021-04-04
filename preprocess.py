@@ -2,14 +2,10 @@
 import nltk
 from nltk.corpus import stopwords as sw
 import unicodedata
-#from spacy.lang.pt import Portuguese
-#from spacy import displacy
 import spacy
-
-#nlp_pt = Portuguese()
 import time
-
 start_time = time.time()
+
 
 class Token:
     """
@@ -64,7 +60,7 @@ class Token:
 
         # executa a limpeza automaticamente após inicializar com o texto
         self.limpeza_stopwords()
-        print("após limpeza stopwords ",time.time() - start_time, "seconds")
+        #print("após limpeza stopwords ",time.time() - start_time, "seconds")
         #self.exibir_entidades()
 
     def remover_acentos(self, palavra):
@@ -101,9 +97,7 @@ class Token:
         
         if isinstance(self.texto, str):  # verifica se a var recebida é string
             # tokeniza o texto bruto
-            print("antes de processar o token bruto ", time.time() - start_time, "seconds")
             self.token_bruto = self.nlp(self.texto)
-            print("processamento do token bruto pra objeto spacy ", time.time() - start_time, "seconds")
             self.tokens_filtrados = []
             for x in self.token_bruto:
                 # para cada elemento no token bruto
@@ -116,10 +110,8 @@ class Token:
                     #print("após o if ", time.time() - start_time, "seconds")
                     self.tokens_filtrados.append(x)
                     if x.pos_ == 'PROPN':
-                        #print("extrair nomes proprios ", time.time() - start_time, "seconds")
                         self.nomes_proprios.append(x.text)
                     self.tokens_lematizados.append(x.lemma_)
-                    #print("lematização ", time.time() - start_time, "seconds")
 
         else:
             raise TypeError("Só consigo tratar strings")

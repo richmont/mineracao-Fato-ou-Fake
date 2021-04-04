@@ -8,6 +8,7 @@ current_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentfra
 parent_dir = os.path.dirname(current_dir)
 sys.path.insert(0, parent_dir) 
 from post import *
+#from token import Token
 
 
 def conectar(nome_arquivo):
@@ -378,3 +379,163 @@ class TabelaPosts(Banco):
             del post
         # retorna a lista de objetos post
         return lista_posts
+
+
+class TabelaTokens(Banco):
+    def __init__(self, cursor):
+        super().__init__(cursor)
+    
+    def criar_tabela(self):
+        """
+        Cria as tabelas necessárias ao funcionamento do banco, 
+        requisito rodar esse método antes de inserir dados
+        """
+        # criando a tabela (schema)
+        self.cursor.execute("""
+        CREATE TABLE IF NOT EXISTS tokens (
+                id_base INTEGER PRIMARY KEY,
+                id_post TEXT NOT NULL,
+                token TEXT NOT NULL
+        );
+        """)
+        self.cursor.connection.commit()
+        print('Tabela criada com sucesso.')
+
+    def consulta_tokens_by_id_post(self, id_post):
+        """
+        Retorna uma lista com todos os tokens 
+        identificados pelo id do post
+        Parâmetros:
+        id_post (string)
+
+        Retorna:
+        list
+        """
+        # retorna None se um ou ambos os parametros são None
+        if token is None:
+            return None
+        elif id_post is None:
+            return None
+
+        consulta_id_post_query = f"SELECT token from tokens where id_post = '{id_post}'"
+        self.cursor.execute(consulta_id_post_query)
+        resultado = self.cursor.fetchall()
+        lista_tokens = []
+        if resultado is None:
+            return None
+        else:
+            for x in resultado:
+                lista_tokens.append(x)
+            return lista_tokens
+
+    def consulta_id_base_by_id_post(self, id_post):
+        """
+        Retorna uma lista com todos os id_base 
+        identificados pelo id_post
+        Parâmetros:
+        id_post (string)
+
+        Retorna:
+        list
+        """
+        # retorna None se um ou ambos os parametros são None
+        if id_post is None:
+            return None
+        else:
+            consulta_id_post_query = f"SELECT id_base from tokens where id_post = '{id_post}'"
+            self.cursor.execute(consulta_id_post_query)
+            resultado = self.cursor.fetchall()
+            lista_id_base = []
+            if resultado is None:
+                return None
+            else:
+                for x in resultado:
+                    lista_id_base.append(x)
+                return lista_id_base
+
+    def inserir_token(self, id_post, token):
+        """
+        Insere no banco os tokens recebidos por
+        parâmetros de id_post e token (string)
+        Parâmetros:
+        id_post (string)
+        token (list)
+
+        Retorna: 
+        lista com id_base dos tokens inseridos
+        """
+        if id_post is None:
+            return None
+        elif token is None:
+            return None
+        else:
+            valores = []
+            for x in token:
+                
+                if not self.existe_by_token_e_id(id_post, x):
+                    # já existe entrada no banco com esses dados
+                    print("token", x, "com id_post", id_post, "já existe no banco, pulando")
+                else:
+                    # não existe, inclui na lista
+                    token_para_inserir = [id_post, x]
+                    valores.append(token_para_inserir)
+                    token_para_inserir = None
+            if len(valores) is None:
+                # nenhum token inserido
+                return False
+            else:
+                for y in valores:
+                    self.cursor.execute('INSERT INTO tokens (id_post, token) VALUES (?, ?)', y)
+                    self.cursor.connection.commit()
+                lista_id_base = self.consulta_id_base_by_id_post(id_post)
+                return lista_id_base    
+
+    def consulta_by_palavra(self, palavra):
+        """
+        Consulta no campo "token" a palavra recebida
+        retorna uma lista com os ids_base e id_post onde a palavra ocorre
+
+        Parâmetros:
+        palavra (string)
+
+        Retorna:
+        ids_post (lista)
+        """
+        # retorna None se um ou ambos os parametros são None
+        if token is None:
+            return None
+        else:
+            consulta_id_post_query = f"SELECT token, id_post from tokens where token = '{palavra}'"
+            self.cursor.execute(consulta_id_post_query)
+            resultado = self.cursor.fetchall()
+            lista_tokens = []
+            if resultado is None:
+                return None
+            else:
+                for x in resultado:
+                    lista_tokens.append(x)
+                return lista_tokens
+
+    def existe_by_token_e_id(self, token, id_post):
+        """
+        Verifica se já existe no banco uma entrada com
+        o mesmo token e o mesmo _id
+        evitando duplicidade
+        """
+
+        # retorna None se um ou ambos os parametros são None
+        if token is None:
+            return None
+        elif id_post is None:
+            return None
+
+        consulta_id_query = f"SELECT id_base from tokens where id_post = '{id_post}' and token = '{token}'"
+        self.cursor.execute(consulta_id_query)
+        resultado = self.cursor.fetchone()
+        # resultado da consulta maior que zero
+        # token com mesmo id localizado no banco
+        if resultado is None:
+            return True
+        # não localizado
+        else:
+            return False
