@@ -14,7 +14,7 @@ class Token:
     """
 
     def __init__(self, id, nlp, stopwords_customizadas=None, texto=None):
-        print("antes de inicializar o objeto ", time.time() - start_time, "seconds")
+        #print("antes de inicializar o objeto ", time.time() - start_time, "seconds")
         """
         Inicializa o objeto Token com stopwords padrões do NLTK,
         mas dá a opção de receber uma lista de stopwords do usuário
@@ -29,7 +29,7 @@ class Token:
         self.texto = texto  # texto a ser tratado
         self.lista_stopwords = []  # inicializa a variável vazia
         self.tokens_filtrados = [] # palavras filtradas sem stopwords e pontuação
-        self.nomes_proprios = []
+        #self.nomes_proprios = []
         self.tokens_lematizados = []
         self._id = id # identificador único da notícia
         self.nlp = nlp
@@ -44,7 +44,7 @@ class Token:
             nltk.download("punkt")
             nltk.download("stopwords")
             self.lista_stopwords = sw.words('portuguese')
-        print("Recebendo stopwords do NLTK", time.time() - start_time, "seconds")
+        #print("Recebendo stopwords do NLTK", time.time() - start_time, "seconds")
         if stopwords_customizadas is not None:
             """
             se o método recebeu a lista de stopwords customizadas,
@@ -109,8 +109,8 @@ class Token:
                 if x.text.isalnum() and (x.text not in self.lista_stopwords) or ("-" in x.text) and (not x.is_stop):
                     #print("após o if ", time.time() - start_time, "seconds")
                     self.tokens_filtrados.append(x)
-                    if x.pos_ == 'PROPN':
-                        self.nomes_proprios.append(x.text)
+                    #if x.pos_ == 'PROPN':
+                    #    self.nomes_proprios.append(x.text)
                     self.tokens_lematizados.append(x.lemma_)
 
         else:

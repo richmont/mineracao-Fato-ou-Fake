@@ -85,8 +85,6 @@ class Banco:
             # tentar alterar uma coluna que não existe retorna esse erro
             except sqlite3.OperationalError as e:
                 print("Alteração falhou: ", e)
-
-
         else:
             print("_id não localizado, alteração falhou")
 
@@ -453,26 +451,26 @@ class TabelaTokens(Banco):
                     lista_id_base.append(x)
                 return lista_id_base
 
-    def inserir_token(self, id_post, token):
+    def inserir_token(self, id_post, tokens):
         """
-        Insere no banco os tokens recebidos por
-        parâmetros de id_post e token (string)
+        Insere no banco os tokenss recebidos por
+        parâmetros de id_post e tokens (string)
         Parâmetros:
         id_post (string)
-        token (list)
+        tokens (list)
 
         Retorna: 
-        lista com id_base dos tokens inseridos
+        lista com id_base dos tokenss inseridos
         """
         if id_post is None:
             return None
-        elif token is None:
+        elif tokens is None:
             return None
         else:
             valores = []
-            for x in token:
+            for x in tokens:
                 
-                if not self.existe_by_token_e_id(id_post, x):
+                if self.existe_by_token_e_id(token=x, id_post=id_post):
                     # já existe entrada no banco com esses dados
                     print("token", x, "com id_post", id_post, "já existe no banco, pulando")
                 else:
@@ -489,6 +487,30 @@ class TabelaTokens(Banco):
                     self.cursor.connection.commit()
                 lista_id_base = self.consulta_id_base_by_id_post(id_post)
                 return lista_id_base    
+
+    def existe_by_token_e_id(self, token, id_post):
+        """
+        Verifica se já existe no banco uma entrada com
+        o mesmo token e o mesmo _id
+        evitando duplicidade
+        """
+
+        # retorna None se um ou ambos os parametros são None
+        if token is None:
+            return None
+        elif id_post is None:
+            return None
+
+        consulta_id_query = f"SELECT id_base from tokens where id_post = '{id_post}' and token = '{token}'"
+        self.cursor.execute(consulta_id_query)
+        resultado = self.cursor.fetchone()
+        
+        if resultado is None:
+            # objeto do resultado é None, consulta vazia
+            return False  # não existe
+        # consulta tem conteúdo, então
+        else:
+            return True  # existe
 
     def consulta_by_palavra(self, palavra):
         """
@@ -515,27 +537,3 @@ class TabelaTokens(Banco):
                 for x in resultado:
                     lista_tokens.append(x)
                 return lista_tokens
-
-    def existe_by_token_e_id(self, token, id_post):
-        """
-        Verifica se já existe no banco uma entrada com
-        o mesmo token e o mesmo _id
-        evitando duplicidade
-        """
-
-        # retorna None se um ou ambos os parametros são None
-        if token is None:
-            return None
-        elif id_post is None:
-            return None
-
-        consulta_id_query = f"SELECT id_base from tokens where id_post = '{id_post}' and token = '{token}'"
-        self.cursor.execute(consulta_id_query)
-        resultado = self.cursor.fetchone()
-        # resultado da consulta maior que zero
-        # token com mesmo id localizado no banco
-        if resultado is None:
-            return True
-        # não localizado
-        else:
-            return False
