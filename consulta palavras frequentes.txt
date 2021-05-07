@@ -1,0 +1,4 @@
+SELECT token,COUNT(*) as count 
+FROM tokens 
+GROUP BY token 
+ORDER BY count DESC;
