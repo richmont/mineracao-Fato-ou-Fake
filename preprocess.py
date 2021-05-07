@@ -107,9 +107,9 @@ class Token:
                 # resultados de dois engines de stopwords divergem
                 # como o melhor resultado são menos stopwords, usaremos ambos
                 
-                if x.text.isalnum() and (x.pos_ != 'VERB' and x.pos_ != 'NUM') and (x.text not in self.lista_stopwords) or ("-" in x.text) and (not x.is_stop):
+                if x.text.isalnum() and (x.pos_ != 'VERB' and x.pos_ != 'NUM' and x.pos_ != 'AUX' and x.pos_ != 'SCONJ' and x.pos_ != 'ADP') and (x.text not in self.lista_stopwords) or ("-" in x.text) and (not x.is_stop):
                     #print("após o if ", time.time() - start_time, "seconds")
-                    print("a palavra " + x.text + " é um " + x.pos_ + " e foi inserida ao banco")
+                    print("o lemma " + x.lemma_ + " da palavra " + x.text + "  um " + x.pos_ + " e foi inserida ao banco")
                     self.tokens_filtrados.append(x)
                     #if x.pos_ == 'PROPN':
                     #    self.nomes_proprios.append(x.text)

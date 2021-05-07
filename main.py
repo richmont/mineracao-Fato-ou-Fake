@@ -15,7 +15,7 @@ tTokens.criar_tabela()
 lista_posts = tPosts.consulta_post_titulo("É #FAKE que", limite=200000)
 #print("Tempo de consulta ao banco ", time.time() - start_time, "seconds")
 # é preciso adicionar números na lista de stopwords
-stopwords_customizadas = {'É', 'FATO', "FAKE", "mostre", 'após', 'logo', 'R', 'ser', 'dizer', 'usar'}
+stopwords_customizadas = {'É', 'FATO', "FAKE", "mostre", 'após', 'logo', 'R', 'ser', 'dizer', 'usar', 'meio'}
 #stopwords_customizadas = None
 lista_tokens = []
 # carrega o idioma português no spacy apenas uma vez, não mais a cada token criado
