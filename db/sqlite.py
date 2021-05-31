@@ -393,7 +393,8 @@ class TabelaTokens(Banco):
         CREATE TABLE IF NOT EXISTS tokens (
                 id_base INTEGER PRIMARY KEY,
                 id_post TEXT NOT NULL,
-                token TEXT NOT NULL
+                token TEXT NOT NULL,
+                status INTEGER NOT NULL
         );
         """)
         self.cursor.connection.commit()
@@ -451,13 +452,14 @@ class TabelaTokens(Banco):
                     lista_id_base.append(x)
                 return lista_id_base
 
-    def inserir_token(self, id_post, tokens):
+    def inserir_token(self, id_post, tokens, status):
         """
         Insere no banco os tokenss recebidos por
         parâmetros de id_post e tokens (string)
         Parâmetros:
         id_post (string)
-        tokens (list)
+        tokens (list),
+        status (int)
 
         Retorna: 
         lista com id_base dos tokenss inseridos
@@ -465,6 +467,8 @@ class TabelaTokens(Banco):
         if id_post is None:
             return None
         elif tokens is None:
+            return None
+        elif status is None:
             return None
         else:
             valores = []
@@ -475,7 +479,7 @@ class TabelaTokens(Banco):
                     print("token", x, "com id_post", id_post, "já existe no banco, pulando")
                 else:
                     # não existe, inclui na lista
-                    token_para_inserir = [id_post, x]
+                    token_para_inserir = [id_post, x, status]
                     valores.append(token_para_inserir)
                     token_para_inserir = None
             if len(valores) is None:
@@ -483,7 +487,7 @@ class TabelaTokens(Banco):
                 return False
             else:
                 for y in valores:
-                    self.cursor.execute('INSERT INTO tokens (id_post, token) VALUES (?, ?)', y)
+                    self.cursor.execute('INSERT INTO tokens (id_post, token, status) VALUES (?, ?, ?)', y)
                     self.cursor.connection.commit()
                 lista_id_base = self.consulta_id_base_by_id_post(id_post)
                 return lista_id_base    
