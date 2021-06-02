@@ -541,3 +541,42 @@ class TabelaTokens(Banco):
                 for x in resultado:
                     lista_tokens.append(x)
                 return lista_tokens
+
+    def recupera_posts(self):
+        """
+        Recupera todos os posts a partir do banco de tokens
+        
+        Retorna:
+        lista_posts (dict)
+        Dicionário que contém id_post, titulo, status
+        """
+
+        self.cursor.execute('select id_post from tokens')
+        resultado = self.cursor.fetchall()
+        lista = list()
+        for x in resultado:
+            id_post = x[0]
+            elemento = {'id_post': id_post}
+            lista.append(elemento)
+            del elemento
+        del resultado
+        data = lista
+        # sets não aceitam valores duplicados
+        lista_ids = set()
+        for x in data:
+            lista_ids.add(x['id_post'])        
+
+        lista_token_post = list()
+        for x in lista_ids:
+            id_post = x
+            self.cursor.execute(f'select id_post,status,token from tokens where id_post = "{x}"')
+            resultado = self.cursor.fetchall()
+            # status coletado apenas do primeiro resultado
+            #print(resultado[0])
+            status = resultado[0][1]
+            titulo = str()
+            for y in resultado:
+                titulo += str(y[2]+ " ")
+            un_post = {'id_post': id_post, 'status': status, 'titulo': titulo}
+            lista_token_post.append(un_post)
+        return lista_token_post
